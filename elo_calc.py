@@ -28,7 +28,7 @@ def calculate_p(stats):
 # ra: Previous rating of player A, rb: Previous rating of player B
 # ea: Expectation of player A, eb: Expectation of player B
 def calculate_ev(ra, rb):
-    
+
     ea = 1/(1+pow(10, ((rb-ra)/400)))
     eb = 1/(1+pow(10, ((ra-rb)/400)))
 
@@ -59,7 +59,7 @@ def calc_elo_1v1(ra, rb, oa, ob, stats_a, stats_b):
 
     return new_rating_a, new_rating_b
 
-
+#oa = outcome_a
 def calc_elo_team(rta, rtb, oa, ob, stats_ta, stats_tb):
     k = 20
 
