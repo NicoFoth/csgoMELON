@@ -63,16 +63,8 @@ def calc_elo_1v1(ra, rb, oa, ob, stats_a, stats_b):
 def calc_elo_team(rta, rtb, oa, ob, stats_ta, stats_tb):
     k = 20
 
-    average_ra = 0
-    average_rb = 0
-
-    for player_rating in rta:
-        average_ra += player_rating
-    average_ra = average_ra / len(rta)
-
-    for player_rating in rtb:
-        average_rb += player_rating
-    average_rb = average_rb / len(rtb)
+    average_ra = sum(rta) / len(rta)
+    average_rb = sum(rtb) / len(rtb)
 
     new_rta = []
     new_rtb = []
@@ -135,6 +127,6 @@ def calc_elo_team(rta, rtb, oa, ob, stats_ta, stats_tb):
 
 
 
-print(calc_elo_team([1489, 1490, 1480, 1478], [1528, 1524, 1500, 1520], None, None, [[22, 4, 22], [25, 9, 26], [19, 3, 21], [11, 4, 26]], [[31, 7, 19], [26, 6, 19], [23, 3, 24], [11, 4, 19]]))
+print(calc_elo_team([1500, 1500], [1500, 1500], True, None, [[20, 0, 20], [20, 0, 20]], [[31, 7, 19], [26, 6, 19], [23, 3, 24], [11, 4, 19]]))
 
 # print(calc_elo_1v1(1500, 1500, False, True, [20, 0, 40], [40, 0, 20]))
