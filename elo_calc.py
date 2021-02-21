@@ -2,7 +2,7 @@ import math
 
 # Calculates performance value
 def calculate_p(stats):
-    k = 0.5
+    k = 1
 
     if stats[2] == 0:
         stats[2] = 1
@@ -61,7 +61,7 @@ def calc_elo_1v1(ra, rb, oa, ob, stats_a, stats_b):
 
 #oa = outcome_a
 def calc_elo_team(rta, rtb, oa, ob, stats_ta, stats_tb):
-    k = 20
+    k = 40
 
     average_ra = sum(rta) / len(rta)
     average_rb = sum(rtb) / len(rtb)
