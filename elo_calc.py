@@ -2,7 +2,7 @@ import math
 
 # Calculates performance value
 def calculate_p(stats):
-    k = 0.2
+    k = 0.5
 
     if stats[2] == 0:
         stats[2] = 1
@@ -88,6 +88,21 @@ def calc_elo_team(rta, rtb, oa, ob, stats_ta, stats_tb):
         if oa == False:
             new_rating = rta[player_rating_index] + (k * (1/p) * ((0-calculate_ev(rta[player_rating_index], average_rb)[0])))
             new_rta.append(new_rating)
+        
+        if oa == None:
+            
+            if (0.5-calculate_ev(rta[player_rating_index], average_rb)[0]) >= 0:
+                if p >= 1:
+                    new_rating = rta[player_rating_index] + k * p * (0.5-calculate_ev(rta[player_rating_index], average_rb)[0])
+                else:
+                    new_rating = rta[player_rating_index] + k * p * (0.5-calculate_ev(rta[player_rating_index], average_rb)[0])
+            else:
+                if p >= 1:
+                    new_rating = rta[player_rating_index] + k * (1/p) * (0.5-calculate_ev(rta[player_rating_index], average_rb)[0])
+                else:
+                    new_rating = rta[player_rating_index] + k * (1/p) * (0.5-calculate_ev(rta[player_rating_index], average_rb)[0])
+
+            new_rta.append(new_rating) 
 
     for player_rating_index in range(len(rtb)):
 
@@ -101,10 +116,25 @@ def calc_elo_team(rta, rtb, oa, ob, stats_ta, stats_tb):
             new_rating = rtb[player_rating_index] + (k * (1/p) * ((0-calculate_ev(rtb[player_rating_index], average_ra)[0])))
             new_rtb.append(new_rating)
 
+        if ob == None:
+            
+            if (0.5-calculate_ev(rtb[player_rating_index], average_ra)[0]) >= 0:
+                if p >= 1:
+                    new_rating = rtb[player_rating_index] + k * p * (0.5-calculate_ev(rtb[player_rating_index], average_ra)[0])
+                else:
+                    new_rating = rtb[player_rating_index] + k * p * (0.5-calculate_ev(rtb[player_rating_index], average_ra)[0])
+            else:
+                if p >= 1:
+                    new_rating = rtb[player_rating_index] + k * (1/p) * (0.5-calculate_ev(rtb[player_rating_index], average_ra)[0])
+                else:
+                    new_rating = rtb[player_rating_index] + k * (1/p) * (0.5-calculate_ev(rtb[player_rating_index], average_ra)[0])
+
+            new_rtb.append(new_rating) 
+
     return new_rta, new_rtb
 
 
 
-print(calc_elo_team([1500, 1400], [1500], False, True, [[20, 0, 20], [20, 0, 20]], [[20, 0, 20]]))
+print(calc_elo_team([1489, 1490, 1480, 1478], [1528, 1524, 1500, 1520], None, None, [[22, 4, 22], [25, 9, 26], [19, 3, 21], [11, 4, 26]], [[31, 7, 19], [26, 6, 19], [23, 3, 24], [11, 4, 19]]))
 
 # print(calc_elo_1v1(1500, 1500, False, True, [20, 0, 40], [40, 0, 20]))

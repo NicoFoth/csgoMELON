@@ -1,9 +1,6 @@
-import server
-import time
+import http.server
 
-server = server.GSIServer(("127.0.0.1", 3000), "S8RL9Z6Y22TYQK45JB4V8PHRJJMD9DS9")
+serverinfo = ("127.0.0.1", 6969)
+server = http.server.HTTPServer(serverinfo)
 
-server.start_server()
-
-print(server.get_info("map"))
-print(server.get_info("matchstats"))
+server.listen()
