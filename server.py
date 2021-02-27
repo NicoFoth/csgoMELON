@@ -78,15 +78,15 @@ class RequestHandler(BaseHTTPRequestHandler):
         else:
             return False
 
-
-
 def scan_for_win(server): #outputs True when match is won by eather party
     while True:
         t_wins = server.get_info("map","team_t","score")
         ct_wins = server.get_info("map","team_ct","score")
         if t_wins == 16 or ct_wins == 16:
-            True
-        break
+            return True
+        else:
+            return False
+        
 
 def output(server): #outputs the match stats as dictionary and in console
     output = {}

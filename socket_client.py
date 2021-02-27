@@ -21,10 +21,14 @@ def send_message(client_socket, msg):
     #print(greeting)
     
     client_socket.send(greeting)
-
     client_socket.send(msg)
+    server_response = client_socket.recv(1024).decode("utf-8")
 
-    print(client_socket.recv(1024).decode("utf-8"))
+    print("Server: " + server_response)
+
+    return server_response
+
+
     
 #socket = start_client()
 # send_message(socket,"Kurt/Boby/Gary")

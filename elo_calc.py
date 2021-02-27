@@ -1,6 +1,7 @@
 import math
 import server
 import socket_client
+import time
 
 # Calculates performance value
 def calculate_p(stats):
@@ -77,11 +78,11 @@ def calc_elo_team(rta, rtb, oa, ob, stats_ta, stats_tb):
 
         if oa == True:
             new_rating = rta[player_rating_index] + (k * p * ((1-calculate_ev(rta[player_rating_index], average_rb)[0])))
-            new_rta.append(new_rating)
+            new_rta.append(round(new_rating))
 
         if oa == False:
             new_rating = rta[player_rating_index] + (k * (1/p) * ((0-calculate_ev(rta[player_rating_index], average_rb)[0])))
-            new_rta.append(new_rating)
+            new_rta.append(round(new_rating))
         
         if oa == None:
             
@@ -95,8 +96,7 @@ def calc_elo_team(rta, rtb, oa, ob, stats_ta, stats_tb):
                     new_rating = rta[player_rating_index] + k * (1/p) * (0.5-calculate_ev(rta[player_rating_index], average_rb)[0])
                 else:
                     new_rating = rta[player_rating_index] + k * (1/p) * (0.5-calculate_ev(rta[player_rating_index], average_rb)[0])
-
-            new_rta.append(new_rating) 
+            new_rta.append(round(new_rating)) 
 
     for player_rating_index in range(len(rtb)):
 
@@ -104,11 +104,11 @@ def calc_elo_team(rta, rtb, oa, ob, stats_ta, stats_tb):
 
         if ob == True:
             new_rating = rtb[player_rating_index] + (k * p * ((1-calculate_ev(rtb[player_rating_index], average_ra)[0])))
-            new_rtb.append(new_rating)
+            new_rtb.append(round(new_rating))
 
         if ob == False:
             new_rating = rtb[player_rating_index] + (k * (1/p) * ((0-calculate_ev(rtb[player_rating_index], average_ra)[0])))
-            new_rtb.append(new_rating)
+            new_rtb.append(round(new_rating))
 
         if ob == None:
             
@@ -123,13 +123,13 @@ def calc_elo_team(rta, rtb, oa, ob, stats_ta, stats_tb):
                 else:
                     new_rating = rtb[player_rating_index] + k * (1/p) * (0.5-calculate_ev(rtb[player_rating_index], average_ra)[0])
 
-            new_rtb.append(new_rating) 
+            new_rtb.append(round(new_rating)) 
 
     return new_rta, new_rtb
 
 
-#sorts and filters server dictionary and returns two lists, they contain each´s Team player name list in alphabetical order
-def parser_palyer_list(payload):
+#sorts and filters gsi server dictionary and returns two lists, they contain each´s Team player name list in alphabetical order
+def gsi_parse_player_list(payload):
     payload = sorted(payload.items())           #sort dictionary (names, alphabetical)
 
     players_t = []
@@ -156,8 +156,8 @@ def parser_palyer_list(payload):
     return players
 
 
-#sorts and filters server dictionary and returns two lists, they contain K/A/D in the alphabetical order of the player´s name 
-def parser_stats(payload):
+#sorts and filters gsi server dictionary and returns two lists, they contain K/A/D in the alphabetical order of the player´s name 
+def gsi_parse_stats(payload):
     payload = sorted(payload.items())           #sort dictionary (names, alphabetical)
     
     team_t_stats = []
@@ -179,22 +179,76 @@ def parser_stats(payload):
             print("Player could not be asigned a Team or the payload is corrupted")
         
     return team_t_stats, team_ct_stats
-            
+
+#takes a touple of the form ([[t_elo_1,t_elo_2,...],[ct_elo_1,ct_elo_2,...]]) and a string of the form "t_name_1/t_name_2.../ct_name_n" 
+#returns single string with player name and corosponding new elo "t_name_1:t_new_elo_1|...|ct_name_n:ct_new_elo_n"
+def parse_payload_to_send(elo_list, player_dictionary): #elo_list[team(0 = t, 1 = ct)][player][0]
+        output_string = ""
+        player_dictionary = sorted(player_dictionary.items())
+        
+        for player in player_dictionary:
+            i = 0
+            if player[1]["team"] == "T":
+                output_string += str(player[0]) + "$" + str(elo_list[0][i][0]) + ":" + str(player[1]["kills"]) + ":" + str(player[1]["assists"]) + ":" + str(player[1]["deaths"]) + "/"
+                i += 1
+
+        for player in player_dictionary:
+            i = 0
+            if player[1]["team"] == "CT":
+                output_string += str(player[0]) + "$" + str(elo_list[1][i][0]) + ":" + str(player[1]["kills"]) + ":" + str(player[1]["assists"]) + ":" + str(player[1]["deaths"]) + "/"
+                i += 1
+
+        return output_string[:-1]
+
+def elo_str_to_elo_list(all_player_elo_str, player_dictionary):
+    player_dictionary = sorted(player_dictionary.items())
+    all_player_elo_list = all_player_elo_str.split("/")
+    out_player_elo_list = [[],[]]
+    count_ts = 0
+    count_cts = 0
+    i = 0
+    
+    for player in player_dictionary:
+        if player[1]["team"] == "T":            #checks player team
+            count_ts += 1                       #appends player name to team list
+        elif player[1]["team"] == "CT":
+            count_cts += 1
+
+
+    for _ in range(count_ts):
+        out_player_elo_list[0].append(all_player_elo_list[i])
+        i += 1
+    
+    for _ in range(count_cts):
+        out_player_elo_list[1].append(all_player_elo_list[i])
+        i += 1
+
+    return out_player_elo_list
 
 gsi_server_instance = server.GSIServer(("localhost",3000),"tau")
 gsi_server_instance.start_server()
 
-players_in_match = parser_palyer_list(server.output(gsi_server_instance))
-print(players_in_match)
+gsi_server_output = server.output(gsi_server_instance)
+
+players_in_match = gsi_parse_player_list(gsi_server_output) #of the form "Neekotin/dqniel/Horizon/FamerHamer"
+
 socket = socket_client.start_client()
-# socket_client.send_message(socket, players_in_match)
-
-#socket_client.send_message(socket, "Neekotin/dqniel/Hoerizon/")
-
-
-#x = parser_stats(server.output(gsi_server_instance)) # takes snapshot of current round !implement last round only!
+current_elo_str = socket_client.send_message(socket, players_in_match)
+current_elo_list = elo_str_to_elo_list(current_elo_str, gsi_server_output)
 
 
-#print(calc_elo_team([1500, 1500], [1500, 1500], True, None, x[0], x[1])) # x[0 = t / 1 = ct]
+game_ended = False
+while game_ended != True:  
+    game_ended = server.scan_for_win(gsi_server_instance)
 
+all_player_KAD = gsi_parse_stats(server.output(gsi_server_instance))
+
+new_elo = calc_elo_team(current_elo_list[0], current_elo_list[1], True, False, all_player_KAD[0], all_player_KAD[1]) # x[0 = t / 1 = ct]
+print(new_elo)
+
+socket_client.send_message(socket, parse_payload_to_send(new_elo,gsi_server_output))
+
+# test_new_elo = ([1513, 1560], [1480, 1489])
+# socket_client.send_message(socket, "Neekotin$1671:0:0:0")
+#all_player_KAD = gsi_parse_stats(server.output(gsi_server_instance)) # takes snapshot of current round KAD
 # print(calc_elo_1v1(1500, 1500, False, True, [20, 0, 40], [40, 0, 20]))
