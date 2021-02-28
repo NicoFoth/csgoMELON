@@ -64,7 +64,7 @@ def calc_elo_1v1(ra, rb, oa, ob, stats_a, stats_b):
 
 #oa = outcome_a
 def calc_elo_team(rta, rtb, oa, ob, stats_ta, stats_tb):
-    k = 40
+    k = 20
 
     average_ra = sum(rta) / len(rta)
     average_rb = sum(rtb) / len(rtb)
@@ -166,14 +166,14 @@ def gsi_parse_stats(payload):
     for player in payload:
         p = []                                  #empty player list
         if player[1]["team"] == "T":            #checks player team
-            p.append(player[1]["kills"])        #appends stats to player list
-            p.append(player[1]["assists"])
-            p.append(player[1]["deaths"])
+            p.append(int(player[1]["kills"]))   #appends stats to player list
+            p.append(int(player[1]["assists"]))
+            p.append(int(player[1]["deaths"]))
             team_t_stats.append(p)              #appends player to team list
         elif player[1]["team"] == "CT":
-            p.append(player[1]["kills"])
-            p.append(player[1]["assists"])
-            p.append(player[1]["deaths"])
+            p.append(int(player[1]["kills"]))
+            p.append(int(player[1]["assists"]))
+            p.append(int(player[1]["deaths"]))
             team_ct_stats.append(p)
         else:
             print("Player could not be asigned a Team or the payload is corrupted")
@@ -186,16 +186,15 @@ def parse_payload_to_send(elo_list, player_dictionary): #elo_list[team(0 = t, 1 
         output_string = ""
         player_dictionary = sorted(player_dictionary.items())
         
+        i = 0
         for player in player_dictionary:
-            i = 0
             if player[1]["team"] == "T":
-                output_string += str(player[0]) + "$" + str(elo_list[0][i][0]) + ":" + str(player[1]["kills"]) + ":" + str(player[1]["assists"]) + ":" + str(player[1]["deaths"]) + "/"
+                output_string += str(player[0]) + "$" + str(elo_list[0][i]) + ":" + str(player[1]["kills"]) + ":" + str(player[1]["assists"]) + ":" + str(player[1]["deaths"]) + "/"
                 i += 1
-
+        i = 0
         for player in player_dictionary:
-            i = 0
             if player[1]["team"] == "CT":
-                output_string += str(player[0]) + "$" + str(elo_list[1][i][0]) + ":" + str(player[1]["kills"]) + ":" + str(player[1]["assists"]) + ":" + str(player[1]["deaths"]) + "/"
+                output_string += str(player[0]) + "$" + str(elo_list[1][i]) + ":" + str(player[1]["kills"]) + ":" + str(player[1]["assists"]) + ":" + str(player[1]["deaths"]) + "/"
                 i += 1
 
         return output_string[:-1]
@@ -216,37 +215,57 @@ def elo_str_to_elo_list(all_player_elo_str, player_dictionary):
 
 
     for _ in range(count_ts):
-        out_player_elo_list[0].append(all_player_elo_list[i])
+        out_player_elo_list[0].append(int(all_player_elo_list[i]))
         i += 1
     
     for _ in range(count_cts):
-        out_player_elo_list[1].append(all_player_elo_list[i])
+        out_player_elo_list[1].append(int(all_player_elo_list[i]))
         i += 1
 
     return out_player_elo_list
 
+
+"""Starting Servers"""
 gsi_server_instance = server.GSIServer(("localhost",3000),"tau")
 gsi_server_instance.start_server()
+socket = socket_client.start_client()
+t_index = 0 #dont change 
+ct_index = 1 #dont change 
+max_team_wins = 9 #maximal amount of rounds a team can win before the match ends/ standart = 16; wingman = 9
 
+"""Cheks if the round has ended in a T win (True, False), CT win (False, True), or draw (None, None)"""
+game_ended = (False, False)
+while game_ended[0] == False and game_ended[1] == False: 
+    
+    game_ended = server.scan_for_win(gsi_server_instance, max_team_wins)
 gsi_server_output = server.output(gsi_server_instance)
 
-players_in_match = gsi_parse_player_list(gsi_server_output) #of the form "Neekotin/dqniel/Horizon/FamerHamer"
+players_in_match_str = gsi_parse_player_list(gsi_server_output) 
+#of the form "Neekotin/dqniel/Horizon/FamerHamer"
 
-socket = socket_client.start_client()
-current_elo_str = socket_client.send_message(socket, players_in_match)
-current_elo_list = elo_str_to_elo_list(current_elo_str, gsi_server_output)
+#hint: variable names that contain "str" in them are usualy messages recieved from or ment to be send to the socket server 
+
+"""Sends request to server to send the players elo"""
+current_elo_str = socket_client.send_message(socket, players_in_match_str)
+#of the form "1505/1153/1539/1549"
+current_elo_list = elo_str_to_elo_list(current_elo_str, gsi_server_output) 
+#of the form [[1505, 1153], [1539, 1549]] 
+
+"""Filters the players stats out of the gsi dictionary"""
+all_player_KAD = gsi_parse_stats(gsi_server_output)
+#of the form ([[22, 2, 16], [9, 4, 17]], [[18, 0, 16], [20, 4, 21]]) ([t1_stats,t2_stats],[ct1_stats,ct2_stats]) t1_stats = [kills,assists,deaths]
+
+print("Player Stats: " + str(all_player_KAD))
+print("Player Elo(old): " + str(current_elo_list))
 
 
-game_ended = False
-while game_ended != True:  
-    game_ended = server.scan_for_win(gsi_server_instance)
+"""calculating the new elo"""
+new_elo = calc_elo_team(current_elo_list[t_index], current_elo_list[ct_index], game_ended[t_index], game_ended[ct_index], all_player_KAD[t_index], all_player_KAD[ct_index])
+print("Player Elo(new): " + str(new_elo))
 
-all_player_KAD = gsi_parse_stats(server.output(gsi_server_instance))
-
-new_elo = calc_elo_team(current_elo_list[0], current_elo_list[1], True, False, all_player_KAD[0], all_player_KAD[1]) # x[0 = t / 1 = ct]
-print(new_elo)
-
-socket_client.send_message(socket, parse_payload_to_send(new_elo,gsi_server_output))
+"""Parsing new elo to a string and sending it to the socket server"""
+updated_elo_str = parse_payload_to_send(new_elo,gsi_server_output)
+socket_client.send_message(socket, updated_elo_str)
 
 # test_new_elo = ([1513, 1560], [1480, 1489])
 # socket_client.send_message(socket, "Neekotin$1671:0:0:0")
