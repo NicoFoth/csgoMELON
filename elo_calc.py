@@ -231,7 +231,7 @@ gsi_server_instance.start_server()
 socket = socket_client.start_client()
 t_index = 0 #dont change 
 ct_index = 1 #dont change 
-max_team_wins = 9 #maximal amount of rounds a team can win before the match ends/ standart = 16; wingman = 9
+max_team_wins = 16 #maximal amount of rounds a team can win before the match ends/ standart = 16; wingman = 9
 
 """Cheks if the round has ended in a T win (True, False), CT win (False, True), or draw (None, None)"""
 game_ended = (False, False)
