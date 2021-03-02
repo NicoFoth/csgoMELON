@@ -104,9 +104,9 @@ def output(server): #outputs the match stats as dictionary and in console
                 stats["team"] = getattr(getattr(server.gamestate.allplayers, "p" + str(i) ) , "team")
                 output[name] = stats
 
-                print("---------------------------------------------------------------")
-                print(name, end=": ")
-                print(stats)
+                # print("---------------------------------------------------------------")
+                # print(name, end=": ")
+                # print(stats)
             else:
                 pass
     return output

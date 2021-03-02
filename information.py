@@ -130,4 +130,6 @@ class AllPlayers:
         self.p7 = Player()
         self.p8 = Player()
         self.p9 = Player()
+        self.p10 = Player()
+        self.p11 = Player()
         

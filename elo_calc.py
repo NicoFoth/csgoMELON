@@ -225,49 +225,56 @@ def elo_str_to_elo_list(all_player_elo_str, player_dictionary):
     return out_player_elo_list
 
 
-"""Starting Servers"""
-gsi_server_instance = server.GSIServer(("localhost",3000),"tau")
-gsi_server_instance.start_server()
-socket = socket_client.start_client()
-t_index = 0 #dont change 
-ct_index = 1 #dont change 
-max_team_wins = 16 #maximal amount of rounds a team can win before the match ends/ standart = 16; wingman = 9
+def exec_elo_calc_process():
+    """Starting Servers"""
+    gsi_server_instance = server.GSIServer(("localhost",3000),"tau")
+    gsi_server_instance.start_server()
+    socket = socket_client.start_client()
+    t_index = 0 #dont change 
+    ct_index = 1 #dont change 
+    max_team_wins = 16 #maximal amount of rounds a team can win before the match ends/ standart = 16; wingman = 9
 
-"""Cheks if the round has ended in a T win (True, False), CT win (False, True), or draw (None, None)"""
-game_ended = (False, False)
-while game_ended[0] == False and game_ended[1] == False: 
-    
-    game_ended = server.scan_for_win(gsi_server_instance, max_team_wins)
-gsi_server_output = server.output(gsi_server_instance)
+    """Cheks if the round has ended in a T win (True, False), CT win (False, True), or draw (None, None)"""
+    game_ended = (False, False)
+    while game_ended[0] == False and game_ended[1] == False: 
+        
+        game_ended = server.scan_for_win(gsi_server_instance, max_team_wins)
+    gsi_server_output = server.output(gsi_server_instance)
 
-players_in_match_str = gsi_parse_player_list(gsi_server_output) 
-#of the form "Neekotin/dqniel/Horizon/FamerHamer"
+    players_in_match_str = gsi_parse_player_list(gsi_server_output) 
+    #of the form "Neekotin/dqniel/Horizon/FamerHamer"
 
-#hint: variable names that contain "str" in them are usualy messages recieved from or ment to be send to the socket server 
+    #hint: variable names that contain "str" in them are usualy messages recieved from or ment to be send to the socket server 
 
-"""Sends request to server to send the players elo"""
-current_elo_str = socket_client.send_message(socket, players_in_match_str)
-#of the form "1505/1153/1539/1549"
-current_elo_list = elo_str_to_elo_list(current_elo_str, gsi_server_output) 
-#of the form [[1505, 1153], [1539, 1549]] 
+    """Sends request to server to send the players elo"""
+    current_elo_str = socket_client.send_message(socket, players_in_match_str)
+    #of the form "1505/1153/1539/1549"
+    current_elo_list = elo_str_to_elo_list(current_elo_str, gsi_server_output) 
+    #of the form [[1505, 1153], [1539, 1549]] 
 
-"""Filters the players stats out of the gsi dictionary"""
-all_player_KAD = gsi_parse_stats(gsi_server_output)
-#of the form ([[22, 2, 16], [9, 4, 17]], [[18, 0, 16], [20, 4, 21]]) ([t1_stats,t2_stats],[ct1_stats,ct2_stats]) t1_stats = [kills,assists,deaths]
+    """Filters the players stats out of the gsi dictionary"""
+    all_player_KAD = gsi_parse_stats(gsi_server_output)
+    #of the form ([[22, 2, 16], [9, 4, 17]], [[18, 0, 16], [20, 4, 21]]) ([t1_stats,t2_stats],[ct1_stats,ct2_stats]) t1_stats = [kills,assists,deaths]
 
-print("Player Stats: " + str(all_player_KAD))
-print("Player Elo(old): " + str(current_elo_list))
+    print("Player Stats: " + str(all_player_KAD))
+    print("Player Elo(old): " + str(current_elo_list))
 
 
-"""calculating the new elo"""
-new_elo = calc_elo_team(current_elo_list[t_index], current_elo_list[ct_index], game_ended[t_index], game_ended[ct_index], all_player_KAD[t_index], all_player_KAD[ct_index])
-print("Player Elo(new): " + str(new_elo))
+    """calculating the new elo"""
+    new_elo = calc_elo_team(current_elo_list[t_index], current_elo_list[ct_index], game_ended[t_index], game_ended[ct_index], all_player_KAD[t_index], all_player_KAD[ct_index])
+    print("Player Elo(new): " + str(new_elo))
 
-"""Parsing new elo to a string and sending it to the socket server"""
-updated_elo_str = parse_payload_to_send(new_elo,gsi_server_output)
-socket_client.send_message(socket, updated_elo_str)
+    """Parsing new elo to a string and sending it to the socket server"""
+    updated_elo_str = parse_payload_to_send(new_elo,gsi_server_output)
+    socket_client.send_message(socket, updated_elo_str)
 
-# test_new_elo = ([1513, 1560], [1480, 1489])
-# socket_client.send_message(socket, "Neekotin$1671:0:0:0")
-#all_player_KAD = gsi_parse_stats(server.output(gsi_server_instance)) # takes snapshot of current round KAD
-# print(calc_elo_1v1(1500, 1500, False, True, [20, 0, 40], [40, 0, 20]))
+exec_elo_calc_process()
+
+# gsi_server_instance = server.GSIServer(("localhost",3000),"tau")
+# gsi_server_instance.start_server()
+
+# gsi_server_output = server.output(gsi_server_instance)
+# print(gsi_server_output)
+# print(server.scan_for_win(gsi_server_instance, 1))
+# print(gsi_parse_player_list(gsi_server_output))
+# print(gsi_parse_stats(gsi_server_output))
