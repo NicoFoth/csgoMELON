@@ -94,7 +94,7 @@ def scan_for_win(server, max_team_wins): #outputs
 
 def output(server): #outputs the match stats as dictionary and in console
     output = {}
-    for i in range(10):
+    for i in range(12):
             if getattr(getattr(server.gamestate.allplayers, "p" + str(i) ) , "name") != None:
 
                 name = getattr(getattr(server.gamestate.allplayers, "p" + str(i) ) , "name")
