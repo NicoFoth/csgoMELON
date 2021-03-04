@@ -23,8 +23,13 @@ def calculate_p(stats):
         raw_p = 1 - raw_p
         p = raw_p * k
         p = 1-p
-    
-    return p
+
+    if p > 3:
+        return 3
+    elif p < 0.3:
+        return 0.3
+    else:
+        return p
 
 
 # Calculates expectation value
