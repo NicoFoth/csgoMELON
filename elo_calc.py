@@ -273,12 +273,7 @@ def exec_elo_calc_process():
     updated_elo_str = parse_payload_to_send(new_elo,gsi_server_output)
     socket_client.send_message(socket, updated_elo_str)
 
-# exec_elo_calc_process()
-
-gsi_server_instance = server.GSIServer(("localhost",3000),"tau")
-gsi_server_instance.start_server()
-gsi_server_output = server.output(gsi_server_instance)
-print(gsi_parse_player_list(gsi_server_output))
+exec_elo_calc_process()
 
 # gsi_server_instance.server_close()
 # print(server.scan_for_win(gsi_server_instance, 1))
