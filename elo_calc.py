@@ -138,9 +138,9 @@ def gsi_parse_player_list(payload):
 
     for player in payload:
         if player[1]["team"] == "T":            #checks player team
-            players_t.append(player[0])         #appends player name to team list
+            players_t.append(player[1]["steamid"])         #appends player name to team list
         elif player[1]["team"] == "CT":
-            players_ct.append(player[0])
+            players_ct.append(player[1]["steamid"])
         else:
             print("Player could not be asigned a Team or the payload is corrupted")
 
@@ -189,12 +189,12 @@ def parse_payload_to_send(elo_list, player_dictionary): #elo_list[team(0 = t, 1 
         i = 0
         for player in player_dictionary:
             if player[1]["team"] == "T":
-                output_string += str(player[0]) + "$" + str(elo_list[0][i]) + ":" + str(player[1]["kills"]) + ":" + str(player[1]["assists"]) + ":" + str(player[1]["deaths"]) + "/"
+                output_string += str(player[1]["steamid"]) + "$" + str(elo_list[0][i]) + ":" + str(player[1]["kills"]) + ":" + str(player[1]["assists"]) + ":" + str(player[1]["deaths"]) + "/"
                 i += 1
         i = 0
         for player in player_dictionary:
             if player[1]["team"] == "CT":
-                output_string += str(player[0]) + "$" + str(elo_list[1][i]) + ":" + str(player[1]["kills"]) + ":" + str(player[1]["assists"]) + ":" + str(player[1]["deaths"]) + "/"
+                output_string += str(player[1]["steamid"]) + "$" + str(elo_list[1][i]) + ":" + str(player[1]["kills"]) + ":" + str(player[1]["assists"]) + ":" + str(player[1]["deaths"]) + "/"
                 i += 1
 
         return output_string[:-1]
@@ -268,13 +268,14 @@ def exec_elo_calc_process():
     updated_elo_str = parse_payload_to_send(new_elo,gsi_server_output)
     socket_client.send_message(socket, updated_elo_str)
 
-exec_elo_calc_process()
+# exec_elo_calc_process()
 
-# gsi_server_instance = server.GSIServer(("localhost",3000),"tau")
-# gsi_server_instance.start_server()
+gsi_server_instance = server.GSIServer(("localhost",3000),"tau")
+gsi_server_instance.start_server()
+gsi_server_output = server.output(gsi_server_instance)
+print(gsi_parse_player_list(gsi_server_output))
 
-# gsi_server_output = server.output(gsi_server_instance)
-# print(gsi_server_output)
+# gsi_server_instance.server_close()
 # print(server.scan_for_win(gsi_server_instance, 1))
 # print(gsi_parse_player_list(gsi_server_output))
 # print(gsi_parse_stats(gsi_server_output))

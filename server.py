@@ -53,6 +53,11 @@ class GSIServer(HTTPServer):
         except Exception as E:
             #print(E)
             return False
+    
+    def stop_server(self):
+        self.running = False
+        print("sad")
+        
 
 class RequestHandler(BaseHTTPRequestHandler):
     def do_POST(self):
@@ -102,11 +107,13 @@ def output(server): #outputs the match stats as dictionary and in console
                 stats.pop("score")
                 stats.pop("mvps")
                 stats["team"] = getattr(getattr(server.gamestate.allplayers, "p" + str(i) ) , "team")
+                stats["steamid"] = getattr(getattr(server.gamestate.allplayers, "p" + str(i) ) , "steamid")
                 output[name] = stats
 
-                # print("---------------------------------------------------------------")
-                # print(name, end=": ")
-                # print(stats)
+                print("---------------------------------------------------------------")
+                print(name, end=": ")
+                print(stats)
             else:
                 pass
     return output
+
