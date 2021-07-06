@@ -24,10 +24,6 @@ def send_message(client_socket, msg):
     client_socket.send(msg)
     server_response = client_socket.recv(1024).decode("utf-8")
 
-    print("------------------------------")
-    print("Server: " + server_response)
-    print("------------------------------")
-
     return server_response
 
 
