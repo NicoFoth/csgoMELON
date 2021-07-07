@@ -1,13 +1,19 @@
-from parsers import gsi_parse_player_list, gsi_parse_stats, elo_str_to_elo_list, parse_payload_to_send
+from parsers import gsi_parse_player_list, gsi_parse_stats, elo_str_to_elo_list, parse_payload_to_send, gsi_parse_names
 from elo_calc import calc_elo_team
 import server
 import socket_client
 import openpyxl
+import config
+
+GAMEMODE = config.GAMEMODE
+STORAGE_TYPE = config.STORAGE_TYPE
+FILENAME = config.FILENAME
+SHEETNAME = config.SHEETNAME
 
 
-def retrieve_current_elo_xlsx(filename, sheetname, players_str):
-    wb = openpyxl.load_workbook(filename)
-    sheet = wb[sheetname]
+def retrieve_current_elo_xlsx(FILENAME, SHEETNAME, players_str):
+    wb = openpyxl.load_workbook(FILENAME)
+    sheet = wb[SHEETNAME]
 
     players = players_str.split("/")
 
@@ -31,10 +37,10 @@ def retrieve_current_elo_socket(socket, players_in_match_str):
     #of the form "1505/1153/1539/1549"
 
 
-def send_current_elo_xlsx(filename, sheetname, players_str):
+def send_current_elo_xlsx(FILENAME, SHEETNAME, team_t, team_ct, new_elo_t, new_elo_ct):
 
-    wb = openpyxl.load_workbook(filename)
-    sheet = wb[sheetname]
+    wb = openpyxl.load_workbook(FILENAME)
+    sheet = wb[SHEETNAME]
 
     row_counter = 1
     for player_index in range(len(team_t)):
@@ -53,7 +59,7 @@ def send_current_elo_socket(socket, updated_elo_str):
     socket_client.send_message(socket, updated_elo_str)
 
 
-def exec_server(storage_type, gamemode, custom_gamemode, player_reference):
+def exec_server(STORAGE_TYPE, GAMEMODE, custom_GAMEMODE, player_reference):
 
     """Starting Servers"""
     gsi_server_instance = server.GSIServer(("localhost",3000),"tau")
@@ -63,9 +69,9 @@ def exec_server(storage_type, gamemode, custom_gamemode, player_reference):
     t_index = 0 #dont change
     ct_index = 1 #dont change
     max_team_wins = None
-    if gamemode == 1:
+    if GAMEMODE == 1:
         max_team_wins = 16
-    elif gamemode == 2:
+    elif GAMEMODE == 2:
         max_team_wins = 9
 
     """Cheks if the round has ended in a T win (True, False), CT win (False, True), or draw (None, None)"""
@@ -83,13 +89,13 @@ def exec_server(storage_type, gamemode, custom_gamemode, player_reference):
 
     socket = None
     current_elo_str = ""
-    if storage_type == 1:
-        current_elo_str = retrieve_current_elo_xlsx(filename, sheetname, players_in_match_str)
+    if STORAGE_TYPE == 1:
+        current_elo_str = retrieve_current_elo_xlsx(FILENAME, SHEETNAME, players_in_match_str)
         if isinstance(current_elo_str, str):
             print(current_elo_str)
             return
 
-    elif storage_type == 2:
+    elif STORAGE_TYPE == 2:
         socket = socket_client.start_client()
         current_elo_str = retrieve_current_elo_socket(socket, players_in_match_str)
     
@@ -111,10 +117,14 @@ def exec_server(storage_type, gamemode, custom_gamemode, player_reference):
 
 
     current_elo_str = ""
-    if storage_type == 1:
-        current_elo_str = send_current_elo_xlsx()
+    if STORAGE_TYPE == 1:
+        team_t, team_ct = gsi_parse_names(gsi_server_output)
+        new_elo_t = new_elo[0]
+        new_elo_ct = new_elo[1]
+        current_elo_str = send_current_elo_xlsx(FILENAME, SHEETNAME, team_t, team_ct, new_elo_t, new_elo_ct)
 
-    elif storage_type == 2:
+    elif STORAGE_TYPE == 2:
         current_elo_str = send_current_elo_socket(socket, updated_elo_str)
     
 
+exec_server()
