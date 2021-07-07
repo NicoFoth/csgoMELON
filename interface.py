@@ -3,13 +3,16 @@ import manage
 
 def initialisation():
 
-    print("How would you like to store/retrieve the data?")
-    print("Type 1 for .xlsx file, 2 for sockets or 3 for raw:")
-    storage_type = int(input())
+    storage_type = inputs(
+        "How would you like to store/retrieve the data?",
+        "Type 1 for .xlsx file or 2 for sockets:",
+    )
 
-    print("Which gamemode do you want to play?")
-    print("Type 1 for MM, 2 for Wingman or 3 for custom:")
-    gamemode = int(input())
+    gamemode = inputs(
+        "Which gamemode do you want to play?",
+        "Type 1 for MM, 2 for Wingman or 3 for custom:",
+    )
+
     custom_gamemode = []
 
     if gamemode == 3:
@@ -18,8 +21,14 @@ def initialisation():
         print("How many players are playing on Team 2?")
         custom_gamemode.append(int(input()))
 
-    print("Would you like to use SteamIDs or Usernames?")
-    print("Type 1 for SteamID or 2 for Usernames:")
-    player_reference = int(input())
+    player_reference = inputs(
+        "Would you like to use SteamIDs or Usernames?",
+        "Type 1 for SteamID or 2 for Usernames:",
+    )
 
     manage.exec_server(storage_type, gamemode, custom_gamemode, player_reference)
+
+def inputs(arg0, arg1):
+    print(arg0)
+    print(arg1)
+    return int(input())
