@@ -2,27 +2,55 @@ from parsers import gsi_parse_player_list, gsi_parse_stats, elo_str_to_elo_list,
 from elo_calc import calc_elo_team
 import server
 import socket_client
+import openpyxl
 
 
-def retrieve_current_elo_xlsx():
-    pass
+def retrieve_current_elo_xlsx(filename, sheetname, players_str):
+    wb = openpyxl.load_workbook(filename)
+    sheet = wb[sheetname]
+
+    players = players_str.split("/")
+
+    current_elo = []
+    row_counter = 1
+    for player_index in range(len(players)):
+        while True:
+            if sheet.cell(row_counter, 1).value == players[player_index]:
+                current_elo.append(int(sheet.cell(row_counter, 2).value()))
+                break
+            elif sheet.cell(row_counter, 1).value is None:
+                return f"{players[player_index]} not found!"
+
+    return current_elo
+
+
 
 def retrieve_current_elo_socket(socket, players_in_match_str):
     """Sends request to server to send the players elo"""
     current_elo_str = socket_client.send_message(socket, players_in_match_str)
     #of the form "1505/1153/1539/1549"
 
-def retrieve_current_elo_raw():
-    pass
 
-def send_current_elo_xlsx():
-    pass
+def send_current_elo_xlsx(filename, sheetname, players_str):
+
+    wb = openpyxl.load_workbook(filename)
+    sheet = wb[sheetname]
+
+    row_counter = 1
+    for player_index in range(len(team_t)):
+        if sheet.cell(row_counter, 1) == team_t[player_index]:
+            sheet.cell(row_counter, 2).value = new_elo_t[player_index]
+
+    row_counter = 1
+    for player_index in range(len(team_ct)):
+        if sheet.cell(row_counter, 1) == team_ct[player_index]:
+            sheet.cell(row_counter, 2).value = new_elo_ct[player_index]
+
+    wb.close()
+
 
 def send_current_elo_socket(socket, updated_elo_str):
     socket_client.send_message(socket, updated_elo_str)
-
-def send_current_elo_raw():
-    pass
 
 
 def exec_server(storage_type, gamemode, custom_gamemode, player_reference):
@@ -56,14 +84,15 @@ def exec_server(storage_type, gamemode, custom_gamemode, player_reference):
     socket = None
     current_elo_str = ""
     if storage_type == 1:
-        current_elo_str = retrieve_current_elo_xlsx()
+        current_elo_str = retrieve_current_elo_xlsx(filename, sheetname, players_in_match_str)
+        if isinstance(current_elo_str, str):
+            print(current_elo_str)
+            return
 
     elif storage_type == 2:
         socket = socket_client.start_client()
         current_elo_str = retrieve_current_elo_socket(socket, players_in_match_str)
     
-    elif storage_type == 3:
-        current_elo_str = retrieve_current_elo_raw()
 
     current_elo_list = elo_str_to_elo_list(current_elo_str, gsi_server_output)
     #of the form [[1505, 1153], [1539, 1549]]
@@ -88,6 +117,4 @@ def exec_server(storage_type, gamemode, custom_gamemode, player_reference):
     elif storage_type == 2:
         current_elo_str = send_current_elo_socket(socket, updated_elo_str)
     
-    elif storage_type == 3:
-        current_elo_str = send_current_elo_raw()
 

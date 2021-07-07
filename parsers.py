@@ -71,7 +71,12 @@ def parse_payload_to_send(elo_list, player_dictionary): #elo_list[team(0 = t, 1 
 
 def elo_str_to_elo_list(all_player_elo_str, player_dictionary):
     player_dictionary = sorted(player_dictionary.items())
-    all_player_elo_list = all_player_elo_str.split("/")
+    
+    if isinstance(all_player_elo_str, list):
+        all_player_elo_list = all_player_elo_str
+    else:
+        all_player_elo_list = all_player_elo_str.split("/")
+    
     out_player_elo_list = [[],[]]
     count_ts = 0
     count_cts = 0
