@@ -50,6 +50,23 @@ def gsi_parse_stats(payload):
         
     return team_t_stats, team_ct_stats
 
+#outputs two lists with team names/steamids in an sorted order | currently used for xlsx 
+def gsi_parse_names(payload):
+    payload = sorted(payload.items())           #sort dictionary (names, alphabetical)
+    
+    team_t= []
+    team_ct= []
+
+    for player in payload:
+        if player[1]["team"] == "T":            #checks player team
+            team_t.append(int(player[1]["steamid"]))   #appends stats to player name 
+        elif player[1]["team"] == "CT":
+            team_ct.append(int(player[1]["steamid"]))
+        else:
+            print("Player could not be asigned a Team or the payload is corrupted")
+        
+    return team_t, team_ct
+
 #takes a touple of the form ([[t_elo_1,t_elo_2,...],[ct_elo_1,ct_elo_2,...]]) and a string of the form "t_name_1/t_name_2.../ct_name_n" 
 #returns single string with player name and corosponding new elo "t_name_1:t_new_elo_1|...|ct_name_n:ct_new_elo_n"
 def parse_payload_to_send(elo_list, player_dictionary): #elo_list[team(0 = t, 1 = ct)][player][0]
