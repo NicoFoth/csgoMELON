@@ -59,7 +59,7 @@ def send_current_elo_socket(socket, updated_elo_str):
     socket_client.send_message(socket, updated_elo_str)
 
 
-def exec_server(STORAGE_TYPE, GAMEMODE, custom_GAMEMODE, player_reference):
+def exec_server(STORAGE_TYPE, GAMEMODE):
 
     """Starting Servers"""
     gsi_server_instance = server.GSIServer(("localhost",3000),"tau")
@@ -127,4 +127,4 @@ def exec_server(STORAGE_TYPE, GAMEMODE, custom_GAMEMODE, player_reference):
         current_elo_str = send_current_elo_socket(socket, updated_elo_str)
     
 
-exec_server()
+exec_server(STORAGE_TYPE, GAMEMODE)
