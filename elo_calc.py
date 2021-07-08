@@ -1,7 +1,5 @@
 import math
 
-
-
 # Calculates performance value
 def calculate_p(stats):
     k = 1
@@ -66,54 +64,40 @@ def calc_elo_1v1(ra, rb, oa, ob, stats_a, stats_b):
 
     return new_rating_a, new_rating_b
 
-#oa = outcome_a
-def calc_elo_team(rta, rtb, oa, ob, stats_ta, stats_tb):
+def calculate_elo_team(team_rating,team_stats,win,average_rating_opponend):
     k = 20
+    new_team_rating = []
+    for player_rating_index in range(len(team_rating)):
+
+        p = calculate_p(team_stats[player_rating_index])
+
+        if win == True:
+            new_rating = team_rating[player_rating_index] + (k * p * ((1-calculate_ev(team_rating[player_rating_index], average_rating_opponend)[0])))
+            new_team_rating.append(round(new_rating))
+
+        if win == False:
+            new_rating = team_rating[player_rating_index] + (k * (1/p) * ((0-calculate_ev(team_rating[player_rating_index], average_rating_opponend)[0])))
+            new_team_rating.append(round(new_rating))
+
+        if win is None:
+            
+            if calculate_ev(team_rating[player_rating_index], average_rating_opponend)[0] <= 0.5:
+                new_rating = team_rating[player_rating_index] + k * p * (0.5-calculate_ev(team_rating[player_rating_index], average_rating_opponend)[0])
+            else:
+                new_rating = team_rating[player_rating_index] + k * (1/p) * (0.5-calculate_ev(team_rating[player_rating_index], average_rating_opponend)[0])
+            new_team_rating.append(round(new_rating)) 
+    return new_team_rating
+
+
+
+#oa = outcome_a
+#example parameters calc_elo_match([1100],[900],True,False,[[9,0,4]],[[4,0,9]])
+def calc_elo_match(rta, rtb, oa, ob, stats_ta, stats_tb):
 
     average_ra = sum(rta) / len(rta)
     average_rb = sum(rtb) / len(rtb)
-
-    new_rta = []
-    new_rtb = []
-
-    for player_rating_index in range(len(rta)):
-
-        p = calculate_p(stats_ta[player_rating_index])
-
-        if oa == True:
-            new_rating = rta[player_rating_index] + (k * p * ((1-calculate_ev(rta[player_rating_index], average_rb)[0])))
-            new_rta.append(round(new_rating))
-
-        if oa == False:
-            new_rating = rta[player_rating_index] + (k * (1/p) * ((0-calculate_ev(rta[player_rating_index], average_rb)[0])))
-            new_rta.append(round(new_rating))
-
-        if oa is None:
-            
-            if calculate_ev(rta[player_rating_index], average_rb)[0] <= 0.5:
-                new_rating = rta[player_rating_index] + k * p * (0.5-calculate_ev(rta[player_rating_index], average_rb)[0])
-            else:
-                new_rating = rta[player_rating_index] + k * (1/p) * (0.5-calculate_ev(rta[player_rating_index], average_rb)[0])
-            new_rta.append(round(new_rating)) 
-
-    for player_rating_index in range(len(rtb)):
-
-        p = calculate_p(stats_tb[player_rating_index])
-
-        if ob == True:
-            new_rating = rtb[player_rating_index] + (k * p * ((1-calculate_ev(rtb[player_rating_index], average_ra)[0])))
-            new_rtb.append(round(new_rating))
-
-        if ob == False:
-            new_rating = rtb[player_rating_index] + (k * (1/p) * ((0-calculate_ev(rtb[player_rating_index], average_ra)[0])))
-            new_rtb.append(round(new_rating))
-
-        if ob is None:
-            
-            if calculate_ev(rtb[player_rating_index], average_ra)[0] <= 0.5:
-                new_rating = rtb[player_rating_index] + k * p * (0.5-calculate_ev(rtb[player_rating_index], average_ra)[0])
-            else:
-                new_rating = rtb[player_rating_index] + k * (1/p) * (0.5-calculate_ev(rtb[player_rating_index], average_ra)[0])
-            new_rtb.append(round(new_rating)) 
+    
+    new_rta = calculate_elo_team(rta,stats_ta,oa,average_rb)
+    new_rtb = calculate_elo_team(rtb,stats_tb,ob,average_ra)
 
     return new_rta, new_rtb
