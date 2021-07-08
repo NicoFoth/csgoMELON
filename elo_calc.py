@@ -1,32 +1,41 @@
 import math
 
-# Calculates performance value
-def calculate_p(stats):
-    k = 1
 
+"""calculates the performance value given the kills assists and deaths of a player"""
+
+def calculate_performance(stats):       #stats is of the form [kills,assists,deaths]
+
+    k = 1   #a parameter that declares the weight the stats/raw_perfomance has on the performance of the player
+            # k>1 stats become more obsolete; k<1 stats become more important
+            #hint: use two different k values to weight poor and good perfomance differently from another
+
+    #ensures every player has at least 1 death to prohibit division with 0
     if stats[2] == 0:
         stats[2] = 1
 
-    raw_p = (stats[0] + (stats[1]/2)) / stats[2]
+    raw_perfomance = (stats[0] + (stats[1]/2)) / stats[2]   #K/D ratio (assists count as 1/2 kills)
 
-    p = 1
+    performance = 1     #the performance value that is returned by the method at a later point, it is used to calculate the new elo
 
-    if raw_p > 1:
-        raw_p -= 1
-        p = raw_p * k
-        p += 1
+    #applies k value when the player performs good 
+    if raw_perfomance > 1:
+        raw_perfomance -= 1
+        performance = raw_perfomance * k
+        performance += 1
 
-    elif raw_p < 1:
-        raw_p = 1 - raw_p
-        p = raw_p * k
-        p = 1-p
+    #applies k value when the player performs poorly
+    elif raw_perfomance < 1:
+        raw_perfomance = 1 - raw_perfomance
+        performance = raw_perfomance * k
+        performance = 1-performance
 
-    if p > 3:
+    #defines the minimal and maximal performance that is achievable 
+    if performance > 3:
         return 3
-    elif p < 0.3:
+    elif performance < 0.3:
         return 0.3
     else:
-        return p
+        return performance
 
 
 # Calculates expectation value
@@ -45,8 +54,8 @@ def calculate_ev(ra, rb):
 # oa & ob: Outcome of the game - True if won, False if lost
 # pa, pb: Perfomance coefficient of the players
 def calc_elo_1v1(ra, rb, oa, ob, stats_a, stats_b):
-    pa = calculate_p(stats_a)
-    pb = calculate_p(stats_b)
+    pa = calculate_performance(stats_a)
+    pb = calculate_performance(stats_b)
     
     k = 20
 
@@ -69,7 +78,7 @@ def calculate_elo_single_team(team_rating,team_stats,win,average_rating_opponend
     new_team_rating = []
     for player_rating_index in range(len(team_rating)):
 
-        p = calculate_p(team_stats[player_rating_index])
+        p = calculate_performance(team_stats[player_rating_index])
 
         if win == True:
             new_rating = team_rating[player_rating_index] + (k * p * ((1-calculate_ev(team_rating[player_rating_index], average_rating_opponend)[0])))
@@ -102,4 +111,3 @@ def calc_elo_team(rta, rtb, oa, ob, stats_ta, stats_tb):
 
     return new_rta, new_rtb
 
-print(calc_elo_team([1100],[900],True,False,[[9,0,4]],[[4,0,9]]))
