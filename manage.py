@@ -1,5 +1,5 @@
 from parsers import gsi_parse_player_list, gsi_parse_stats, elo_str_to_elo_list, parse_payload_to_send, gsi_parse_names
-from elo_calc import calc_elo_team
+from elo_calc import calc_elo_match
 import server
 import socket_client
 import openpyxl
@@ -109,7 +109,7 @@ def exec_server(STORAGE_TYPE, GAMEMODE, custom_GAMEMODE, player_reference):
 
 
     """calculating the new elo"""
-    new_elo = calc_elo_team(current_elo_list[t_index], current_elo_list[ct_index], game_ended[t_index], game_ended[ct_index], all_player_KAD[t_index], all_player_KAD[ct_index])
+    new_elo = calc_elo_match(current_elo_list[t_index], current_elo_list[ct_index], game_ended[t_index], game_ended[ct_index], all_player_KAD[t_index], all_player_KAD[ct_index])
 
 
     """Parsing new elo to a string and sending it to the socket server"""

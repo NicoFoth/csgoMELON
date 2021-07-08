@@ -73,7 +73,7 @@ def calc_elo_1v1(ra, rb, oa, ob, stats_a, stats_b):
 
     return new_rating_a, new_rating_b
 
-def calculate_elo_single_team(team_rating,team_stats,win,average_rating_opponend):
+def calculate_elo_team(team_rating,team_stats,win,average_rating_opponend):
     k = 20
     new_team_rating = []
     for player_rating_index in range(len(team_rating)):
@@ -100,14 +100,13 @@ def calculate_elo_single_team(team_rating,team_stats,win,average_rating_opponend
 
 
 #oa = outcome_a
-#example parameters calc_elo_team([1100],[900],True,False,[[9,0,4]],[[4,0,9]])
-def calc_elo_team(rta, rtb, oa, ob, stats_ta, stats_tb):
+#example parameters calc_elo_match([1100],[900],True,False,[[9,0,4]],[[4,0,9]])
+def calc_elo_match(rta, rtb, oa, ob, stats_ta, stats_tb):
 
     average_ra = sum(rta) / len(rta)
     average_rb = sum(rtb) / len(rtb)
     
-    new_rta = calculate_elo_single_team(rta,stats_ta,oa,average_rb)
-    new_rtb = calculate_elo_single_team(rtb,stats_tb,ob,average_ra)
+    new_rta = calculate_elo_team(rta,stats_ta,oa,average_rb)
+    new_rtb = calculate_elo_team(rtb,stats_tb,ob,average_ra)
 
     return new_rta, new_rtb
-
