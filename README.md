@@ -1,5 +1,5 @@
 # 🍉csgoMELON🍉
-CS:GO MELON (MELON for the ELO and because they're delicious) is a elo calculation tool for Counterstrike: Global Offensive.
+CS:GO MELON (MELON for the ELO and because they're delicious) is an elo calculation tool for Counterstrike: Global Offensive.
 It extracts the information of a privately hosted game using Valve's Gamestate Integration. You can store the data (currently only the elo but kills, deaths, etc. are coming...) in an excel file or transfer it via the featured socket client and server to another machine, where it can be stored.
 
 ## 🙋🏼‍♂️Introduction🙋🏼‍♂️
