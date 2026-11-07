@@ -1,120 +1,101 @@
+"""Elo maths of csgoMELON.
+
+A match is rated like a game between two players: a team's rating is the average of its
+players' ratings, the usual Elo formula gives its expected score, and the team wins or
+loses K * (score - expected score) points per player. Whatever one team wins, the other
+team loses. The points are split between the players by rounds played and performance:
+on the team that gains points, better performances get a bigger share; on the team that
+loses points, worse performances lose a bigger share.
+"""
 import math
+from typing import NamedTuple
+
+K = 20  # points per player for a win in an even match: K * (1 - 0.5)
+
+# How much performance changes a player's share of the team's points:
+# 0 = every player gets the same share, 1 = shares are proportional to performance
+PERFORMANCE_IMPACT = 1.0
+
+# The performance score compares a player's per-round stats with the average of the match
+# (1 = average). Each part counts at most MAX_PERFORMANCE times the average, and the score
+# is clamped between MIN_PERFORMANCE and MAX_PERFORMANCE.
+PERFORMANCE_WEIGHTS = {
+    "kills": 0.35,     # kills + assists / 2 per round
+    "damage": 0.30,    # damage per round (includes grenade and fire damage)
+    "survival": 0.20,  # share of rounds survived
+    "utility": 0.15,   # utility damage + FLASH_VALUE per enemy flashed, per round
+}
+FLASH_VALUE = 15
+MIN_PERFORMANCE = 0.3
+MAX_PERFORMANCE = 3
 
 
-"""calculates the performance value given the kills assists and deaths of a player"""
-
-def calculate_performance(stats):       #stats is of the form [kills,assists,deaths]
-
-    w = 1   #a parameter that declares the weight the stats/raw_perfomance has on the performance of the player
-            # w > 1 stats become more obsolete; w < 1 stats become more important
-            #hint: use two different w values to weight poor and good perfomance differently from another
-
-    #ensures every player has at least 1 death to prohibit division with 0
-    if stats[2] == 0:
-        stats[2] = 1
-
-    raw_perfomance = (stats[0] + (stats[1]/2)) / stats[2]   #K/D ratio (assists count as 1/2 kills)
-
-    performance = 1     #the performance value that is returned by the method at a later point, it is used to calculate the new elo
-
-    #applies w value when the player performs good 
-    if raw_perfomance > 1:
-        raw_perfomance -= 1
-        performance = raw_perfomance * w 
-        performance += 1
-
-    #applies w value when the player performs poorly
-    elif raw_perfomance < 1:
-        raw_perfomance = 1 - raw_perfomance
-        performance = raw_perfomance * w 
-        performance = 1-performance
-
-    #defines the minimal and maximal performance that is achievable 
-    if performance > 3:
-        return 3
-    elif performance < 0.3:
-        return 0.3
-    else:
-        return performance
+class RatingChange(NamedTuple):
+    before: int
+    after: int
+    performance: float
 
 
-"""calculates the win expectatio of each player/team in the matchup given the ratings of the palyers/teams"""
-
-def calculate_ev(rating_a, rating_b):
-
-    win_excpectation_a = 1/(1+pow(10, ((rating_b-rating_a)/400)))
-    win_excpectation_b = 1/(1+pow(10, ((rating_a-rating_b)/400)))
-
-    return win_excpectation_a, win_excpectation_b
-
-
-""" calculates and returns the new elo of two players in a 1v1 situation """
-
-def calc_elo_1v1(old_rating_a, old_rating_b, win_a, win_b, stats_a, stats_b):
-    performance_a = calculate_performance(stats_a)
-    performance_b = calculate_performance(stats_b)
-    
-    k = 20  #base value of the elo added/subtracted
-
-    #checks match outcome for player A and applies the correct elo formula
-    if win_a == True:
-        new_rating_a = old_rating_a + (k * ((1-calculate_ev(old_rating_a, old_rating_b)[0]) * performance_a))
-    
-    elif win_a == False:
-        new_rating_a = old_rating_a + (k * ((0-calculate_ev(old_rating_a, old_rating_b)[0]) * (1/performance_a)))
-
-    #checks match outcome for player B and applies the correct elo formula
-    if win_b == True:
-        new_rating_b = old_rating_b + (k * ((1-calculate_ev(old_rating_a, old_rating_b)[1]) * performance_b))
-
-    elif win_b == False:
-        new_rating_b = old_rating_b + (k * ((0-calculate_ev(old_rating_a, old_rating_b)[1]) * (1/performance_b)))
-
-    return new_rating_a, new_rating_b
+def performances(players):
+    """Performance score of every player of the match, in the same order."""
+    parts = [{"kills": p.kills + p.assists / 2, "damage": p.damage, "survival": max(p.rounds - p.deaths, 0),
+              "utility": p.utility_damage + FLASH_VALUE * p.enemies_flashed} for p in players]
+    lobby_rounds = sum(p.rounds for p in players)
+    lobby = {k: sum(part[k] for part in parts) / lobby_rounds if lobby_rounds else 0 for k in PERFORMANCE_WEIGHTS}
+    scores = []
+    for p, part in zip(players, parts):
+        score = 0  # added up in order: sum() rounds floats differently since Python 3.12
+        for k, w in PERFORMANCE_WEIGHTS.items():
+            # a part nobody had in the whole match counts as average for everyone
+            score += w * (min(part[k] / max(p.rounds, 1) / lobby[k], MAX_PERFORMANCE) if lobby[k] > 0 else 1)
+        scores.append(min(max(score, MIN_PERFORMANCE), MAX_PERFORMANCE))
+    return scores
 
 
-""" calculates and returns the new elo of a team """
+def rate_match(match, ratings, start_elo):
+    """{steamid: RatingChange} for every player; players without a rating start at start_elo.
+    The changes add up to exactly 0."""
+    elo = {p.steamid: ratings.get(p.steamid, start_elo) for p in match.players}
+    performance = dict(zip(elo, performances(match.players)))
+    team_t, team_ct = match.team("T"), match.team("CT")
+    expected_t = 1 / (1 + 10 ** ((_team_rating(team_ct, elo) - _team_rating(team_t, elo)) / 400))
+    score_t = 0.5 if match.winner is None else float(match.winner == "T")
+    # average number of players per team on the server, 5 for a normal 5v5
+    player_rounds = sum(p.rounds for p in match.players)
+    players = player_rounds / (2 * match.rounds) if match.rounds and player_rounds else len(match.players) / 2
+    points = round(K * players * (score_t - expected_t))
 
-def calculate_elo_team(team_rating,team_stats,win,average_rating_opponend):
+    changes = {}
+    for team, total in ((team_t, points), (team_ct, -points)):
+        for p, delta in zip(team, _split(total, _shares(team, performance, gaining=total > 0))):
+            changes[p.steamid] = RatingChange(elo[p.steamid], elo[p.steamid] + delta, round(performance[p.steamid], 2))
+    return changes
 
-    k = 20  #base value of the elo added/subtracted
-    
-    new_team_rating = []
+
+def _weights(team):
+    """Rounds played by every player of a team, or equal weights if nobody has any."""
+    rounds = [p.rounds for p in team]
+    return rounds if sum(rounds) else [1] * len(team)
 
 
-    if win == True:
-        for player_rating_index in range(len(team_rating)):
-            p = calculate_performance(team_stats[player_rating_index])
-            new_rating = team_rating[player_rating_index] + (k * p * ((1-calculate_ev(team_rating[player_rating_index], average_rating_opponend)[0])))
-            new_team_rating.append(round(new_rating))
+def _team_rating(team, elo):
+    weights = _weights(team)
+    return sum(elo[p.steamid] * n for p, n in zip(team, weights)) / sum(weights)
 
-    if win == False:
-        for player_rating_index in range(len(team_rating)):
-            p = calculate_performance(team_stats[player_rating_index])
-            new_rating = team_rating[player_rating_index] + (k * (1/p) * ((0-calculate_ev(team_rating[player_rating_index], average_rating_opponend)[0])))
-            new_team_rating.append(round(new_rating))
 
-    if win is None:
-        for player_rating_index in range(len(team_rating)):
+def _shares(team, performance, gaining):
+    """How much of the team's points every player gets (not normalised). The team that gains
+    points rewards good performances, the team that loses points spares them."""
+    weights = _weights(team)
+    value = [performance[p.steamid] if gaining else 1 / performance[p.steamid] for p in team]
+    average = sum(n * v for n, v in zip(weights, value)) / sum(weights)
+    return [n * (1 - PERFORMANCE_IMPACT + PERFORMANCE_IMPACT * v / average) for n, v in zip(weights, value)]
 
-            p = calculate_performance(team_stats[player_rating_index])
-            
-            if calculate_ev(team_rating[player_rating_index], average_rating_opponend)[0] <= 0.5:
-                new_rating = team_rating[player_rating_index] + k * p * (0.5-calculate_ev(team_rating[player_rating_index], average_rating_opponend)[0])
-            else:
-                new_rating = team_rating[player_rating_index] + k * (1/p) * (0.5-calculate_ev(team_rating[player_rating_index], average_rating_opponend)[0])
-            new_team_rating.append(round(new_rating)) 
-    return new_team_rating
 
-""" calculates the elo of two teams """
-
-#example parameters print(calc_elo_match([1100],[900],None,None,[[9,0,4]],[[4,0,9]]))
-def calc_elo_match(rating_team_a, rating_team_b, win_a, win_b, stats_ta, stats_tb):
-
-    average_ra = sum(rating_team_a) / len(rating_team_a)
-    average_rb = sum(rating_team_b) / len(rating_team_b)
-    
-    new_rating_team_a = calculate_elo_team(rating_team_a,stats_ta,win_a,average_rb)
-    new_rating_team_b = calculate_elo_team(rating_team_b,stats_tb,win_b,average_ra)
-
-    return new_rating_team_a, new_rating_team_b
+def _split(total, shares):
+    """Splits an integer total by shares into integers that add up to it (largest remainder)."""
+    exact = [total * s / sum(shares) for s in shares]
+    result = [math.floor(x) for x in exact]
+    for i in sorted(range(len(exact)), key=lambda i: (result[i] - exact[i], i))[:total - sum(result)]:
+        result[i] += 1
+    return result

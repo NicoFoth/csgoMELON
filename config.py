@@ -1,6 +1,16 @@
-GAMEMODE = 1 # 1 for Competitive or 2 for Wingman
-STORAGE_TYPE = 1 # 1 for storing in a .xlsx file, 2 for transferring it with a socket
-FILENAME = "your_file_name.xlsx" # File name of the elo db [ONLY IF YOU ARE USING THE XLSX STORAGE TYPE]
-SHEETNAME = "your_sheet_name" # Sheet name within the .xlsx file [ONLY IF YOU ARE USING THE XLSX STORAGE TYPE]
-SOCKET_HOST = "127.0.0.1" # Socket host adress
-SOCKET_PORT = 0000 # Socket port for storing/retrieving data
+# Which game the demos are from: "cs2" or "csgo"
+# (CS:GO demos need Python 3.11 or older, see README.md)
+GAME = "cs2"
+
+# Where the ratings are kept:
+#   "xlsx"   - an Excel workbook (XLSX_FILE)
+#   "sqlite" - an SQLite database (SQLITE_FILE)
+STORAGE = "xlsx"
+
+START_ELO = 1000  # elo of a player that is seen for the first time
+
+XLSX_FILE = "melon.xlsx"
+XLSX_SHEET = "Players"  # steamid | elo | name
+XLSX_MATCHES_SHEET = "Matches"  # one row per player per match
+
+SQLITE_FILE = "melon.db"

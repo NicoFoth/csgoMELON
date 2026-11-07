@@ -1,1 +1,10 @@
+__pycache__/
 *.pyc
+.venv/
+venv/
+*.db
+*.dem
+*.dem.bz2
+melon.xlsx
+~$*.xlsx
+*.tmp
